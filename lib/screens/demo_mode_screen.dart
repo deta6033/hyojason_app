@@ -40,7 +40,7 @@ class DemoModeScreen extends StatelessWidget {
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
                 tileColor: selected ? AppTheme.blueSoft : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppTheme.border)),
                 title: Text(scenario.displayName, style: const TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
