@@ -106,7 +106,9 @@ class AppState extends ChangeNotifier {
     );
 
     await NotificationService.instance.initialize();
-    await NotificationService.instance.rescheduleAll(_medications);
+    if (_guardian.notificationEnabled) {
+      await NotificationService.instance.rescheduleAll(_medications);
+    }
     notifyListeners();
   }
 
@@ -130,7 +132,9 @@ class AppState extends ChangeNotifier {
   Future<void> addMedication(MedicationSchedule schedule) async {
     _medications.add(schedule);
     await _persistMedications();
-    if (schedule.enabled) await NotificationService.instance.scheduleMedication(schedule);
+    if (schedule.enabled && _guardian.notificationEnabled) {
+      await NotificationService.instance.scheduleMedication(schedule);
+    }
     notifyListeners();
   }
 
@@ -140,7 +144,9 @@ class AppState extends ChangeNotifier {
     _medications[index] = schedule;
     await _persistMedications();
     await NotificationService.instance.cancelMedication(schedule.id);
-    if (schedule.enabled) await NotificationService.instance.scheduleMedication(schedule);
+    if (schedule.enabled && _guardian.notificationEnabled) {
+      await NotificationService.instance.scheduleMedication(schedule);
+    }
     notifyListeners();
   }
 
@@ -190,8 +196,23 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateGuardian(GuardianSettings settings) async {
+    final notificationChanged =
+        _guardian.notificationEnabled != settings.notificationEnabled;
+
     _guardian = settings;
     await storage.saveGuardian(settings);
+
+    if (notificationChanged) {
+      if (settings.notificationEnabled) {
+        await NotificationService.instance.requestPermission();
+        await NotificationService.instance.rescheduleAll(_medications);
+      } else {
+        for (final medication in _medications) {
+          await NotificationService.instance.cancelMedication(medication.id);
+        }
+      }
+    }
+
     notifyListeners();
   }
 
