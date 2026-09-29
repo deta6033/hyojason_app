@@ -32,7 +32,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              guardian.elderName + ' 어르신의\n오늘은 이래요',
+              '\${guardian.elderName} 어르신의\n오늘은 이래요',
               style: AppTheme.displayStyle,
             ),
             const SizedBox(height: 9),
@@ -188,7 +188,7 @@ class _TopBar extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                guardianName + ' 보호자님',
+                '\$guardianName 보호자님',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -286,7 +286,7 @@ class _OverallStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      elderName + ' 어르신 오늘 상태',
+                      '\$elderName 어르신 오늘 상태',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 2),
@@ -592,7 +592,7 @@ class _ConversationPreview extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '“' + lastMessage!.text + '”',
+                          '“\${lastMessage!.text}”',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
@@ -657,10 +657,7 @@ class _DeviceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '배터리 ' +
-                      device.battery.toString() +
-                      '% · ' +
-                      device.networkName,
+                  '배터리 \${device.battery}% · \${device.networkName}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -673,7 +670,7 @@ class _DeviceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              device.battery.toString() + '%',
+              '\${device.battery}%',
               style: TextStyle(
                 color: stateColor,
                 fontWeight: FontWeight.w700,
