@@ -20,12 +20,12 @@ class NotificationsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('알림', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-                      SizedBox(height: 5),
+                      Text('알림', style: AppTheme.displayStyle),
+                      const SizedBox(height: 5),
                     ],
                   ),
                 ),
@@ -35,7 +35,7 @@ class NotificationsScreen extends StatelessWidget {
             ),
             Text(
               state.unreadNotificationCount == 0 ? '새로운 알림이 없습니다.' : '읽지 않은 알림 ${state.unreadNotificationCount}개',
-              style: const TextStyle(color: AppTheme.muted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -54,7 +54,8 @@ class NotificationsScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(17),
                             decoration: BoxDecoration(
                               color: item.read ? Colors.white : AppTheme.blueSoft,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: item.read ? AppTheme.border : const Color(0xFFDDE8FF)),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +128,7 @@ class _NotificationIcon extends StatelessWidget {
     return Container(
       width: 46,
       height: 46,
-      decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(15)),
       child: Icon(icon, color: foreground),
     );
   }
