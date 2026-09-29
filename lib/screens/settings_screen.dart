@@ -22,13 +22,13 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('설정', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+            Text('설정', style: AppTheme.displayStyle),
             const SizedBox(height: 24),
             const _SectionTitle('보호자 정보'),
             const SizedBox(height: 11),
             Container(
               padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
               child: Column(
                 children: [
                   ListTile(
@@ -76,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
             const _SectionTitle('서비스'),
             const SizedBox(height: 11),
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
               child: Column(
                 children: [
                   ListTile(
@@ -101,7 +101,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 11),
             Container(
               padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
               child: const Column(
                 children: [
                   _SettingRow(title: '앱 이름', value: AppConfig.appName),
@@ -203,7 +203,7 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800));
+  Widget build(BuildContext context) => Text(text, style: AppTheme.sectionTitleStyle.copyWith(fontSize: 18));
 }
 
 class _SettingRow extends StatelessWidget {

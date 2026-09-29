@@ -17,7 +17,7 @@ class DailySummaryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('하루 요약', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
+            Text('하루 요약', style: AppTheme.displayStyle),
             const SizedBox(height: 6),
             const Text('AI가 어르신의 오늘을 돌봄 정보 중심으로 정리했어요.', style: TextStyle(color: AppTheme.muted)),
             const SizedBox(height: 24),
@@ -43,7 +43,7 @@ class DailySummaryScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('대화 기록', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                Text('대화 기록', style: AppTheme.sectionTitleStyle),
                 Text('${record.conversations.length}개', style: const TextStyle(color: AppTheme.muted)),
               ],
             ),
@@ -52,7 +52,7 @@ class DailySummaryScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
                 child: const Text('이날 기록된 대화가 없습니다.', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.muted)),
               )
             else
@@ -83,7 +83,7 @@ class AiConversationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6FF),
+      backgroundColor: AppTheme.background,
       appBar: AppBar(title: const Text('AI 대화 기록')),
       body: Column(
         children: [
@@ -176,7 +176,7 @@ class _SummaryStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppTheme.border)),
       child: Row(
         children: [
           Icon(icon, color: AppTheme.primary),

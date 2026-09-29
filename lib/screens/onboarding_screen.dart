@@ -47,7 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F7FF),
+      backgroundColor: const Color(0xFFF4F7FF),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -61,7 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Image.asset('assets/app_icon.png', width: 104, height: 104),
                   ),
                   const SizedBox(height: 20),
-                  const Text(AppConfig.appName, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900)),
+                  const Text(AppConfig.appName, style: TextStyle(fontFamily: AppTheme.titleFont, fontSize: 38, fontWeight: FontWeight.w700, color: AppTheme.text)),
                   const SizedBox(height: 7),
                   const Text(AppConfig.appSubtitle, style: TextStyle(color: AppTheme.muted, fontSize: 16)),
                   const SizedBox(height: 16),
@@ -73,11 +73,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 34),
                   Container(
                     padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28)),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.border), boxShadow: AppTheme.softShadow),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('보호자 정보 설정', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                        Text('보호자 정보 설정', style: AppTheme.sectionTitleStyle),
                         const SizedBox(height: 6),
                         const Text('설정 화면에서 언제든 수정할 수 있어요.', style: TextStyle(color: AppTheme.muted)),
                         const SizedBox(height: 22),
