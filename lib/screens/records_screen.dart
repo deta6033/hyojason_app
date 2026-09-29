@@ -59,7 +59,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 24),
       itemCount: records.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final record = records[index];
         final needsAttention = !record.medicine;
