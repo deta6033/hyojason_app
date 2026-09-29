@@ -1,0 +1,35 @@
+{
+  "name": "효자손",
+  "short_name": "효자손",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F1F7FF",
+  "theme_color": "#4D8FF7",
+  "description": "오늘 하루를 들어주는 보호자용 돌봄 앱",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
