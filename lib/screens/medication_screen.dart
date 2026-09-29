@@ -19,13 +19,13 @@ class MedicationScreen extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('복약 일정', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-                      SizedBox(height: 5),
-                      Text('보호자가 등록한 시간에 실제 휴대폰 알림을 받을 수 있어요.', style: TextStyle(color: AppTheme.muted)),
+                      Text('복약 일정', style: AppTheme.displayStyle),
+                      const SizedBox(height: 6),
+                      Text('등록한 시간에 휴대폰 알림으로 알려드려요.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted)),
                     ],
                   ),
                 ),
@@ -114,7 +114,7 @@ class _MedicationCard extends StatelessWidget {
       opacity: schedule.enabled ? 1 : 0.55,
       child: Container(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
         child: Row(
           children: [
             Container(
@@ -184,12 +184,12 @@ class _MedicationEditorState extends State<_MedicationEditor> {
       context: context,
       initialTime: TimeOfDay(hour: hour, minute: minute),
     );
-  if (result != null) {
-  setState(() {
-    hour = result.hour;
-    minute = result.minute;
-  });
-}
+    if (result != null) {
+      setState(() {
+        hour = result.hour;
+        minute = result.minute;
+      });
+    }
   }
 
   @override
@@ -226,7 +226,7 @@ class _MedicationEditorState extends State<_MedicationEditor> {
               const SizedBox(height: 18),
               Text(
                 widget.existing == null ? '복약 일정 추가' : '복약 일정 수정',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                style: AppTheme.sectionTitleStyle.copyWith(fontSize: 24),
               ),
               const SizedBox(height: 22),
               TextField(
@@ -237,8 +237,8 @@ class _MedicationEditorState extends State<_MedicationEditor> {
               const Text('복약 시간', style: TextStyle(fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               ListTile(
-                tileColor: const Color(0xFFF4F6F9),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: const Color(0xFFF1F3F7),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
                 leading: const Icon(Icons.schedule_rounded),
                 title: Text(timeText, style: const TextStyle(fontWeight: FontWeight.w700)),
                 trailing: const Icon(Icons.chevron_right_rounded),
