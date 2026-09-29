@@ -58,14 +58,14 @@ class _NoticeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 48,
             height: 48,
-            decoration: const BoxDecoration(color: AppTheme.blueSoft, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppTheme.blueSoft, borderRadius: BorderRadius.circular(15)),
             child: Icon(icon, color: AppTheme.primary),
           ),
           const SizedBox(width: 15),
