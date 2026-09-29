@@ -31,10 +31,15 @@ class _MainShellState extends State<MainShell> {
     final state = AppScope.of(context);
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) => setState(() => currentIndex = index),
-        destinations: [
+      bottomNavigationBar: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFE8EBF1))),
+        ),
+        child: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) =>
+              setState(() => currentIndex = index),
+          destinations: [
           const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home_rounded),
@@ -64,7 +69,8 @@ class _MainShellState extends State<MainShell> {
             selectedIcon: Icon(Icons.settings_rounded),
             label: '설정',
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
