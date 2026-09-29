@@ -34,9 +34,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('지난 기록', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+            Text('지난 기록', style: AppTheme.displayStyle),
             const SizedBox(height: 5),
-            const Text('어르신의 지난 하루를 날짜별로 확인해보세요.', style: TextStyle(color: AppTheme.muted)),
+            Text('어르신의 지난 하루를 날짜별로 확인해보세요.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted)),
             const SizedBox(height: 20),
             SegmentedButton<bool>(
               segments: const [
@@ -71,7 +71,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
           ),
           child: Container(
             padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppTheme.border)),
             child: Row(
               children: [
                 Container(
@@ -117,7 +117,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.border), boxShadow: AppTheme.softShadow),
             child: Column(
               children: [
                 Row(
@@ -173,7 +173,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: AppTheme.greenSoft, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: AppTheme.greenSoft, borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFFDCEFE3))),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
