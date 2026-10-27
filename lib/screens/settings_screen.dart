@@ -6,6 +6,7 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'privacy_screen.dart';
+import 'device_monitor_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -71,6 +72,15 @@ class SettingsScreen extends StatelessWidget {
                   _SettingRow(title: '마지막 동기화', value: device.lastSync.year < 2020 ? '확인 불가' : formatKoreanTime(device.lastSync)),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.location_on_outlined, color: AppTheme.primary),
+              title: const Text('기기 상태 및 GPS 위치', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('서버에 실제로 보고된 마지막 위치 확인'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const DeviceMonitorScreen())),
             ),
             const SizedBox(height: 26),
             const _SectionTitle('서비스'),
