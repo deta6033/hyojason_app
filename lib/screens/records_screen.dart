@@ -62,7 +62,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final record = records[index];
-        final needsAttention = !record.medicine;
+        final needsAttention = false;
         return InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => Navigator.push(
@@ -94,7 +94,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                       Text(formatKoreanDate(record.date), style: const TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 5),
                       Text(
-                        '기분 ${record.mood} · 복약 ${record.medicine ? '완료' : '미확인'} · 외출 ${record.outing ? '있음' : '없음'}',
+                        '${record.conversations.where((m) => !m.isAi).length}건의 실제 AI 대화 기록',
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
@@ -234,7 +234,7 @@ class _MonthCalendar extends StatelessWidget {
             final date = DateTime(month.year, month.month, day);
             final selected = isSameDate(date, selectedDate);
             final hasRecord = records.any((record) => isSameDate(record.date, date));
-            final warning = records.any((record) => isSameDate(record.date, date) && !record.medicine);
+            final warning = false;
             return InkWell(
               borderRadius: BorderRadius.circular(99),
               onTap: () => onDateSelected(date),

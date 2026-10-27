@@ -105,7 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     children: [
                       Icon(Icons.lock_outline_rounded, size: 14, color: AppTheme.muted),
                       SizedBox(width: 5),
-                      Text('시제품에서는 입력한 정보를 기기 내부에만 저장합니다.', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
+                      Text('보호자 이름은 이 휴대폰에 저장됩니다. 대화 기록은 Firebase에서 가져옵니다.', style: TextStyle(fontSize: 11, color: AppTheme.muted)),
                     ],
                   ),
                 ],

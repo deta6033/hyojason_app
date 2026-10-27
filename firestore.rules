@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function guardian(deviceId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/devices/$(deviceId)/guardians/$(request.auth.uid))
+        && get(/databases/$(database)/documents/devices/$(deviceId)/guardians/$(request.auth.uid)).data.enabled == true;
+    }
+    match /devices/{deviceId} {
+      allow read: if guardian(deviceId);
+      allow write: if false;
+      match /guardians/{uid} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+      match /conversations/{id} {
+        allow read: if guardian(deviceId);
+        allow write: if false;
+      }
+      match /medications/{id} {
+        allow read, create, update, delete: if guardian(deviceId);
+      }
+      match /notifications/{id} {
+        allow read, create, update, delete: if guardian(deviceId);
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
