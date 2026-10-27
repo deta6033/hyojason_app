@@ -205,7 +205,7 @@ class _ConnectionPill extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            connected ? '기기 연결됨' : '연결 끊김',
+            connected ? '기기 연결됨' : '연결 미확인',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -334,7 +334,7 @@ class _DailyMetrics extends StatelessWidget {
               color: AppTheme.primary,
               softColor: AppTheme.blueSoft,
               title: '식사',
-              value: record.meal ? '완료' : '확인 필요',
+              value: record.meal ? '완료' : '미확인',
             ),
             _MetricCard(
               width: itemWidth,
@@ -350,7 +350,7 @@ class _DailyMetrics extends StatelessWidget {
               color: AppTheme.success,
               softColor: AppTheme.greenSoft,
               title: '외출',
-              value: record.outing ? '있음' : '없음',
+              value: record.outing ? '있음' : '미확인',
             ),
             _MetricCard(
               width: itemWidth,
@@ -631,7 +631,7 @@ class _DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  device.connected ? '정상 연결' : '연결 끊김',
+                  device.connected ? '정상 연결' : '연결 미확인',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -639,7 +639,7 @@ class _DeviceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '배터리 ${device.battery}% · ${device.networkName}',
+                  '배터리 ${device.battery < 0 ? '미확인' : device.battery < 0 ? '미확인' : '${device.battery}%'} · ${device.networkName}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
