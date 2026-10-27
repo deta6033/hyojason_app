@@ -15,19 +15,19 @@ class PrivacyScreen extends StatelessWidget {
           _NoticeCard(
             icon: Icons.mic_off_rounded,
             title: '음성 원본 장기 저장 안 함',
-            text: '제품화 단계에서는 음성 처리가 끝난 뒤 원본 음성을 장기간 보관하지 않는 것을 기본 원칙으로 설계합니다.',
+            text: '현재 ESP32는 2초 녹음 데이터를 Cloud Run으로 전송합니다. 녹음 파일의 보관 정책은 서버에서 별도 검증이 필요합니다.',
           ),
           SizedBox(height: 12),
           _NoticeCard(
             icon: Icons.summarize_rounded,
             title: '필요한 요약만 보호자에게',
-            text: '보호자에게는 식사, 복약, 외출, 기분 등 돌봄에 필요한 정보와 하루 요약을 전달하는 방향입니다.',
+            text: '현재 앱은 실제 질문과 AI 답변만 Firestore에서 읽습니다. 생활 데이터 요약은 아직 구현되지 않았습니다.',
           ),
           SizedBox(height: 12),
           _NoticeCard(
             icon: Icons.notifications_active_outlined,
             title: '녹음 안내',
-            text: '실제 효자손 기기에서는 녹음이 시작될 때 안내음을 재생하고 사용자가 기록을 중지할 수 있도록 설계할 예정입니다.',
+            text: '현재 ESP32에서는 버튼으로 2초 녹음을 시작합니다. 안내음과 녹음 취소는 아직 구현되지 않았습니다.',
           ),
           SizedBox(height: 12),
           _NoticeCard(
@@ -39,7 +39,7 @@ class PrivacyScreen extends StatelessWidget {
           _NoticeCard(
             icon: Icons.science_outlined,
             title: '현재는 시제품',
-            text: '현재 앱의 AI 대화와 기기 상태는 창업경진대회 시연용 데이터입니다. 실제 하드웨어와 AI 서버는 추후 연결할 수 있도록 구조를 분리했습니다.',
+            text: '대화 기록은 실제 Cloud Run과 Firebase에서 불러옵니다. 기기 상태·배터리·GPS·긴급호출은 서버 연동 전까지 확인할 수 없습니다.',
           ),
         ],
       ),
