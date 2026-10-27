@@ -54,14 +54,14 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
             const _SectionHeader(
               title: '오늘의 기록',
-              subtitle: '대화에서 정리된 주요 생활 정보예요.',
+              subtitle: '식사·복약·외출 완료 여부는 아직 서버에서 확인하지 않습니다.',
             ),
             const SizedBox(height: 14),
             _DailyMetrics(record: record),
             const SizedBox(height: 30),
             _SectionHeader(
               title: 'AI 하루 요약',
-              subtitle: '오늘의 핵심만 짧게 정리했어요.',
+              subtitle: '실제 대화 건수를 확인해요 (AI 요약 기능 미연동).',
               actionText: '자세히',
               onTap: () => Navigator.push(
                 context,
@@ -105,7 +105,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
             const _SectionHeader(
               title: '효자손 기기',
-              subtitle: '연결 상태와 배터리를 확인해요.',
+              subtitle: '서버에 보고된 상태만 표시해요.',
             ),
             const SizedBox(height: 14),
             _DeviceCard(device: device),
@@ -120,35 +120,17 @@ class HomeScreen extends StatelessWidget {
     DailyRecord record,
     DeviceStatus device,
   ) {
-    if (!device.connected || state.demoScenario == DemoScenario.noConversation) {
+    if (!device.connected) {
       return (
-        '주의',
-        AppTheme.danger,
-        !device.connected
-            ? '효자손 기기 연결이 끊겼어요. 연결 상태를 확인해주세요.'
-            : '최근 24시간 동안 새로운 대화가 확인되지 않았어요.',
-        !device.connected
-            ? Icons.link_off_rounded
-            : Icons.mark_chat_unread_rounded,
-      );
-    }
-    if (!record.medicine || device.battery <= 15) {
-      return (
-        '확인 필요',
-        AppTheme.warning,
-        !record.medicine
-            ? '확인이 필요한 복약 기록이 있어요.'
-            : '효자손 기기의 배터리가 부족해요.',
-        !record.medicine
-            ? Icons.medication_rounded
-            : Icons.battery_alert_rounded,
+        '연결 미확인', AppTheme.warning,
+        '기기 상태 정보가 아직 서버에 보고되지 않았습니다.',
+        Icons.info_outline_rounded,
       );
     }
     return (
-      '안정적',
-      AppTheme.success,
-      '식사·복약·대화 기록에서 특별한 이상 징후가 없어요.',
-      Icons.favorite_rounded,
+      '기기 연결', AppTheme.success,
+      '최근 기기 상태 신호가 확인되었습니다. 생활 상태는 별도로 확인해주세요.',
+      Icons.wifi_rounded,
     );
   }
 }
@@ -670,7 +652,7 @@ class _DeviceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              '${device.battery}%',
+              device.battery < 0 ? '—' : '${device.battery}%',
               style: TextStyle(
                 color: stateColor,
                 fontWeight: FontWeight.w700,
