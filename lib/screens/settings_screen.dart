@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
-import 'demo_mode_screen.dart';
 import 'privacy_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -65,10 +65,10 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _SettingRow(title: '연결 상태', value: device.connected ? '정상' : '연결 끊김'),
-                  _SettingRow(title: '배터리', value: '${device.battery}%'),
+                  _SettingRow(title: '배터리', value: device.battery < 0 ? '확인 불가' : '${device.battery}%'),
                   _SettingRow(title: '네트워크', value: device.networkName),
                   _SettingRow(title: '기기 ID', value: device.deviceId),
-                  _SettingRow(title: '마지막 동기화', value: formatKoreanTime(device.lastSync)),
+                  _SettingRow(title: '마지막 동기화', value: device.lastSync.year < 2020 ? '확인 불가' : formatKoreanTime(device.lastSync)),
                 ],
               ),
             ),
@@ -86,13 +86,6 @@ class SettingsScreen extends StatelessWidget {
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())),
                   ),
                   const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.science_outlined, color: AppTheme.primary),
-                    title: const Text('시연 모드', style: TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text(state.demoScenario.displayName),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DemoModeScreen())),
-                  ),
                 ],
               ),
             ),
@@ -106,18 +99,24 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   _SettingRow(title: '앱 이름', value: AppConfig.appName),
                   _SettingRow(title: '버전', value: AppConfig.version),
-                  _SettingRow(title: '데이터', value: '시연용 데이터'),
-                  _SettingRow(title: '기기 연동', value: '시뮬레이션'),
+                  _SettingRow(title: '데이터', value: 'Firebase 실시간 기록'),
+                  _SettingRow(title: '기기 연동', value: '실제 상태 데이터 기준'),
                 ],
               ),
             ),
+            const SizedBox(height: 18),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              onPressed: () async {
+                await state.stopLive();
+                await FirebaseAuth.instance.signOut();
+              }, icon: const Icon(Icons.logout), label: const Text('로그아웃'))),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _resetApp(context),
                 icon: const Icon(Icons.restart_alt_rounded),
-                label: const Text('시제품 데이터 초기화'),
+                label: const Text('이 휴대폰의 보호자 설정 초기화'),
               ),
             ),
           ],
@@ -186,8 +185,8 @@ class SettingsScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('시제품 데이터 초기화'),
-        content: const Text('보호자 설정과 복약 일정, 알림 기록을 초기 상태로 되돌립니다. 계속할까요?'),
+        title: const Text('보호자 설정 초기화'),
+        content: const Text('이 휴대폰에 저장된 보호자 설정만 초기화합니다. 서버의 대화·복약 기록은 삭제하지 않습니다.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('초기화')),
