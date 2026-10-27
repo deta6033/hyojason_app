@@ -1,75 +1,54 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
+import '../services/firestore_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/notification_service.dart';
 
-// 앱 전체에서 사용하는 데이터를 관리합니다.
+// 더미 기록을 사용하지 않는 실제 보호자 앱 상태.
+// 대화/복약/알림은 Firestore 실시간 스냅샷으로 갱신한다.
 class AppState extends ChangeNotifier {
   final LocalStorageService storage;
-
+  final FirestoreService remote = FirestoreService();
   AppState({required this.storage});
 
   final List<DailyRecord> _records = [];
   final List<MedicationSchedule> _medications = [];
   final List<AppNotificationItem> _notifications = [];
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   GuardianSettings _guardian = const GuardianSettings(
-    guardianName: '보호자',
-    elderName: '김OO',
-    relationship: '자녀',
-    phone: '',
-    notificationEnabled: true,
-  );
-
-  DeviceStatus _baseDevice = DeviceStatus(
-    connected: true,
-    battery: 82,
-    networkName: 'HOME Wi-Fi',
-    lastSync: DateTime.now(),
-    deviceId: 'HYOJA-001',
-  );
-
+    guardianName: '보호자', elderName: '어르신', relationship: '보호자',
+    phone: '', notificationEnabled: true);
+  DeviceStatus _device = DeviceStatus(
+    connected: false, battery: -1, networkName: '확인 불가',
+    lastSync: DateTime.fromMillisecondsSinceEpoch(0),
+    deviceId: FirestoreService.deviceId);
   bool _onboardingComplete = false;
-  DemoScenario _demoScenario = DemoScenario.normal;
+  bool _liveReady = false;
+  String? _error;
 
   List<DailyRecord> get records => List.unmodifiable(_records);
   List<MedicationSchedule> get medications => List.unmodifiable(_medications);
   List<AppNotificationItem> get notifications => List.unmodifiable(_notifications);
   GuardianSettings get guardian => _guardian;
+  DeviceStatus get device => _device;
   bool get onboardingComplete => _onboardingComplete;
-  DemoScenario get demoScenario => _demoScenario;
+  bool get liveReady => _liveReady;
+  String? get error => _error;
+  DemoScenario get demoScenario => DemoScenario.normal;
 
-  DeviceStatus get device => switch (_demoScenario) {
-        DemoScenario.disconnected => _baseDevice.copyWith(connected: false),
-        DemoScenario.lowBattery => _baseDevice.copyWith(battery: 8),
-        _ => _baseDevice,
-      };
+  DailyRecord get todayRecord => recordForDate(DateTime.now()) ?? _emptyToday();
+  DailyRecord _emptyToday() => DailyRecord(
+    date: DateTime.now(), meal: false, medicine: false, outing: false,
+    mood: '미확인', summary: '오늘 기록된 대화가 아직 없습니다.',
+    aiComment: '실제 대화가 들어오면 여기에 표시됩니다.',
+    conversations: const []);
 
-  DailyRecord get todayRecord {
-    final now = DateTime.now();
-    final base = _records.firstWhere(
-      (record) => isSameDate(record.date, now),
-      orElse: () => _records.first,
-    );
-
-    return switch (_demoScenario) {
-      DemoScenario.medicineMissing => base.copyWith(
-          medicine: false,
-          summary:
-              '오늘 식사와 외출 기록은 정상적으로 확인되었지만 오후 5시 혈압약 복용 여부가 아직 확인되지 않았습니다.',
-          aiComment: '복약 여부를 보호자가 한 번 확인해 주세요.',
-        ),
-      DemoScenario.noConversation => base.copyWith(
-          summary: '최근 24시간 동안 새로운 대화가 확인되지 않았습니다.',
-          aiComment: '어르신의 상태를 직접 확인해보는 것이 좋습니다.',
-          conversations: const [],
-        ),
-      _ => base,
-    };
-  }
-
-  int get unreadNotificationCount => _notifications.where((item) => !item.read).length;
+  int get unreadNotificationCount =>
+      _notifications.where((item) => !item.read).length;
 
   DailyRecord? recordForDate(DateTime date) {
     for (final record in _records) {
@@ -79,36 +58,145 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    _createFakeDailyRecords();
-
+    // 이름 및 온보딩은 해당 휴대폰에 저장; 허가된 Firebase 계정만 서버 접근.
     _guardian = await storage.loadGuardian() ?? _guardian;
-
-    final savedMedications = await storage.loadMedications();
-    _medications
-      ..clear()
-      ..addAll(savedMedications.isEmpty ? _defaultMedications() : savedMedications);
-    if (savedMedications.isEmpty) await storage.saveMedications(_medications);
-
-    final savedNotifications = await storage.loadNotifications();
-    _notifications
-      ..clear()
-      ..addAll(savedNotifications.isEmpty ? _defaultNotifications() : savedNotifications);
-    if (savedNotifications.isEmpty) await storage.saveNotifications(_notifications);
-
     _onboardingComplete = await storage.isOnboardingComplete();
-    _demoScenario = await storage.loadDemoScenario();
-    _baseDevice = DeviceStatus(
-      connected: true,
-      battery: 82,
-      networkName: 'HOME Wi-Fi',
-      lastSync: DateTime.now().subtract(const Duration(minutes: 3)),
-      deviceId: 'HYOJA-001',
-    );
-
     await NotificationService.instance.initialize();
-    if (_guardian.notificationEnabled) {
-      await NotificationService.instance.rescheduleAll(_medications);
+    notifyListeners();
+  }
+
+  DateTime _when(dynamic value) {
+    if (value is Timestamp) return value.toDate().toLocal();
+    if (value is DateTime) return value.toLocal();
+    if (value is String) return DateTime.tryParse(value)?.toLocal() ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  // 로그인 완료 후 실시간 수신 시작; 중복 구독은 반드시 해제한다.
+  Future<void> startLive() async {
+    await stopLive();
+    try {
+      if (!await remote.isAuthorized()) {
+        _error = '이 계정에 효자손 기기 접근 권한이 없습니다. 관리자에게 UID 등록을 요청하세요.';
+        notifyListeners();
+        return;
+      }
+    } catch (e) {
+      _error = 'Firebase 보호자 권한 검사 실패: $e';
+      notifyListeners();
+      return;
     }
+
+    _liveReady = true;
+    _error = null;
+    notifyListeners();
+
+    _subscriptions.add(remote.conversations().listen((snap) {
+      final byDay = <DateTime, List<ConversationMessage>>{};
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final when = _when(data['createdAt']);
+        if (when.year < 2020) continue;
+        final date = DateTime(when.year, when.month, when.day);
+        final messages = byDay.putIfAbsent(date, () => []);
+        final question = (data['question'] as String? ?? '').trim();
+        final answer = (data['reply'] as String? ?? '').trim();
+        if (question.isNotEmpty) {
+          messages.add(ConversationMessage(time: when, text: question, isAi: false));
+        }
+        if (answer.isNotEmpty) {
+          messages.add(ConversationMessage(
+            time: when.add(const Duration(milliseconds: 1)), text: answer, isAi: true));
+        }
+      }
+      _records.clear();
+      for (final item in byDay.entries) {
+        item.value.sort((a, b) => a.time.compareTo(b.time));
+        _records.add(DailyRecord(
+          date: item.key, meal: false, medicine: false, outing: false,
+          mood: '미확인',
+          summary: '실제 AI 대화 ${item.value.where((m) => !m.isAi).length}건이 기록되었습니다. '
+              '식사·복약·외출 정보는 아직 수집되지 않았습니다.',
+          aiComment: '이 기록은 AI 하루 요약이 아닌 실제 대화 목록입니다.',
+          conversations: item.value));
+      }
+      _records.sort((a, b) => b.date.compareTo(a.date));
+      notifyListeners();
+    }, onError: _listenError));
+
+    _subscriptions.add(remote.deviceStatus().listen((snap) {
+      final info = snap.data();
+      final battery = info?['battery'];
+      final lastSeen = _when(info?['lastSeenAt']);
+      // 서버 heartbeat가 2분 이내인 경우에만 온라인으로 표시.
+      final validHeartbeat = lastSeen.year >= 2020 &&
+          DateTime.now().difference(lastSeen).inSeconds.abs() < 120;
+      _device = DeviceStatus(
+        connected: validHeartbeat && info?['online'] == true,
+        battery: battery is num ? battery.toInt() : -1,
+        networkName: info?['networkName'] as String? ?? '확인 불가',
+        lastSync: lastSeen,
+        deviceId: FirestoreService.deviceId);
+      notifyListeners();
+    }, onError: _listenError));
+
+    _subscriptions.add(remote.medications().listen((snap) {
+      _medications
+        ..clear()
+        ..addAll(snap.docs.map((doc) => MedicationSchedule.fromJson({
+          ...doc.data(), 'id': doc.id,
+        })));
+      _syncLocalMedicationAlerts();
+      notifyListeners();
+    }, onError: _listenError));
+
+    _subscriptions.add(remote.notifications().listen((snap) {
+      _notifications
+        ..clear()
+        ..addAll(snap.docs.map((doc) {
+          final data = doc.data();
+          final raw = data['time'];
+          return AppNotificationItem(
+            id: doc.id,
+            title: data['title'] as String? ?? '',
+            message: data['message'] as String? ?? '',
+            time: _when(raw),
+            type: AppNotificationType.values.firstWhere(
+              (type) => type.name == data['type'],
+              orElse: () => AppNotificationType.device),
+            read: data['read'] == true);
+        }));
+      notifyListeners();
+    }, onError: _listenError));
+  }
+
+  void _listenError(Object e) {
+    _error = '실시간 데이터 수신 오류: $e';
+    notifyListeners();
+  }
+
+  Future<void> _syncLocalMedicationAlerts() async {
+    if (!_guardian.notificationEnabled) return;
+    try {
+      await NotificationService.instance.rescheduleAll(_medications);
+    } catch (_) { /* 알림 권한 거부 시에도 서버 데이터는 유지 */ }
+  }
+
+  Future<void> stopLive() async {
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    _records.clear();
+    _medications.clear();
+    _notifications.clear();
+    _liveReady = false;
+    _error = null;
+    _device = DeviceStatus(
+      connected: false, battery: -1, networkName: '확인 불가',
+      lastSync: DateTime.fromMillisecondsSinceEpoch(0),
+      deviceId: FirestoreService.deviceId);
     notifyListeners();
   }
 
@@ -118,10 +206,8 @@ class AppState extends ChangeNotifier {
     required String relationship,
   }) async {
     _guardian = _guardian.copyWith(
-      guardianName: guardianName,
-      elderName: elderName,
-      relationship: relationship,
-    );
+      guardianName: guardianName, elderName: elderName,
+      relationship: relationship);
     _onboardingComplete = true;
     await storage.saveGuardian(_guardian);
     await storage.setOnboardingComplete(true);
@@ -129,80 +215,29 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addMedication(MedicationSchedule schedule) async {
-    _medications.add(schedule);
-    await _persistMedications();
-    if (schedule.enabled && _guardian.notificationEnabled) {
-      await NotificationService.instance.scheduleMedication(schedule);
-    }
-    notifyListeners();
-  }
+  Future<void> addMedication(MedicationSchedule schedule) =>
+      remote.saveMedication(schedule);
+  Future<void> updateMedication(MedicationSchedule schedule) =>
+      remote.saveMedication(schedule);
+  Future<void> deleteMedication(String id) => remote.deleteMedication(id);
 
-  Future<void> updateMedication(MedicationSchedule schedule) async {
-    final index = _medications.indexWhere((item) => item.id == schedule.id);
-    if (index < 0) return;
-    _medications[index] = schedule;
-    await _persistMedications();
-    await NotificationService.instance.cancelMedication(schedule.id);
-    if (schedule.enabled && _guardian.notificationEnabled) {
-      await NotificationService.instance.scheduleMedication(schedule);
-    }
-    notifyListeners();
-  }
-
-  Future<void> deleteMedication(String id) async {
-    _medications.removeWhere((item) => item.id == id);
-    await _persistMedications();
-    await NotificationService.instance.cancelMedication(id);
-    notifyListeners();
-  }
-
-  Future<void> _persistMedications() => storage.saveMedications(_medications);
-
-  Future<void> markNotificationRead(String id) async {
-    final index = _notifications.indexWhere((item) => item.id == id);
-    if (index < 0 || _notifications[index].read) return;
-    _notifications[index] = _notifications[index].copyWith(read: true);
-    await storage.saveNotifications(_notifications);
-    notifyListeners();
-  }
-
-  Future<void> markAllNotificationsRead() async {
-    for (var i = 0; i < _notifications.length; i++) {
-      _notifications[i] = _notifications[i].copyWith(read: true);
-    }
-    await storage.saveNotifications(_notifications);
-    notifyListeners();
-  }
+  Future<void> markNotificationRead(String id) => remote.markRead(id);
+  Future<void> markAllNotificationsRead() => remote.markAllRead(
+    _notifications.where((item) => !item.read).map((item) => item.id));
 
   Future<void> addAppNotification({
-    required String title,
-    required String message,
+    required String title, required String message,
     required AppNotificationType type,
-  }) async {
-    _notifications.insert(
-      0,
-      AppNotificationItem(
-        id: 'notification_${DateTime.now().microsecondsSinceEpoch}',
-        title: title,
-        message: message,
-        time: DateTime.now(),
-        type: type,
-        read: false,
-      ),
-    );
-    await storage.saveNotifications(_notifications);
-    notifyListeners();
-  }
+  }) => remote.addNotification(AppNotificationItem(
+    id: 'notification_${DateTime.now().microsecondsSinceEpoch}',
+    title: title, message: message, time: DateTime.now(),
+    type: type, read: false));
 
   Future<void> updateGuardian(GuardianSettings settings) async {
-    final notificationChanged =
-        _guardian.notificationEnabled != settings.notificationEnabled;
-
+    final changed = settings.notificationEnabled != _guardian.notificationEnabled;
     _guardian = settings;
     await storage.saveGuardian(settings);
-
-    if (notificationChanged) {
+    if (changed) {
       if (settings.notificationEnabled) {
         await NotificationService.instance.requestPermission();
         await NotificationService.instance.rescheduleAll(_medications);
@@ -212,218 +247,39 @@ class AppState extends ChangeNotifier {
         }
       }
     }
-
     notifyListeners();
   }
 
-  Future<void> setDemoScenario(DemoScenario scenario) async {
-    if (_demoScenario == scenario) return;
-    _demoScenario = scenario;
-    await storage.saveDemoScenario(scenario);
-
-    final notification = switch (scenario) {
-      DemoScenario.normal => null,
-      DemoScenario.medicineMissing => (
-          '복약 확인이 필요해요',
-          '오후 5시 혈압약 복용 응답이 아직 확인되지 않았습니다.',
-          AppNotificationType.warning,
-        ),
-      DemoScenario.noConversation => (
-          '24시간 동안 대화가 없어요',
-          '어르신의 상태를 직접 확인해주세요.',
-          AppNotificationType.warning,
-        ),
-      DemoScenario.disconnected => (
-          '효자손 연결 끊김',
-          '효자손 기기와 연결되지 않고 있습니다.',
-          AppNotificationType.device,
-        ),
-      DemoScenario.lowBattery => (
-          '효자손 배터리 부족',
-          '기기 배터리가 8% 남았습니다. 충전해주세요.',
-          AppNotificationType.device,
-        ),
-    };
-
-    if (notification != null) {
-      await addAppNotification(
-        title: notification.$1,
-        message: notification.$2,
-        type: notification.$3,
-      );
-    } else {
-      notifyListeners();
-    }
-  }
+  // 시연용 가짜 상태 시나리오는 제거한다.
+  Future<void> setDemoScenario(DemoScenario _) async {}
 
   Future<void> showTestNotification() async {
     await NotificationService.instance.requestPermission();
     await NotificationService.instance.showTestNotification();
   }
 
+  // 로컬 개인정보 초기화만 진행. 서버의 실제 대화 기록은 삭제하지 않는다.
   Future<void> resetPrototype() async {
-    for (final medication in _medications) {
-      await NotificationService.instance.cancelMedication(medication.id);
-    }
     await storage.resetAll();
-    _records.clear();
-    _medications.clear();
-    _notifications.clear();
     _guardian = const GuardianSettings(
-      guardianName: '보호자',
-      elderName: '김OO',
-      relationship: '자녀',
-      phone: '',
-      notificationEnabled: true,
-    );
+      guardianName: '보호자', elderName: '어르신',
+      relationship: '보호자', phone: '', notificationEnabled: true);
     _onboardingComplete = false;
-    _demoScenario = DemoScenario.normal;
-    _createFakeDailyRecords();
-    _medications.addAll(_defaultMedications());
-    _notifications.addAll(_defaultNotifications());
-    await storage.saveMedications(_medications);
-    await storage.saveNotifications(_notifications);
     notifyListeners();
   }
 
-  void _createFakeDailyRecords() {
-    _records.clear();
-    final now = DateTime.now();
-
-    _records.add(
-      DailyRecord(
-        date: now,
-        meal: true,
-        medicine: true,
-        outing: true,
-        mood: '좋음',
-        summary:
-            '오늘 아침 식사를 완료했고 오후에는 동네 공원으로 산책을 다녀오셨습니다. 오후 5시 복약도 완료했으며 전반적으로 기분이 좋다고 말씀하셨습니다.',
-        aiComment: '식사와 복약을 모두 잘 챙기셨고 산책도 다녀오셨어요. 특별히 걱정되는 내용은 없어요.',
-        conversations: [
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 9, 10),
-            text: '좋은 아침이에요. 아침 식사는 하셨어요?',
-            isAi: true,
-          ),
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 9, 11),
-            text: '응. 오늘은 미역국이랑 밥 먹었어.',
-            isAi: false,
-          ),
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 13, 20),
-            text: '오늘은 밖에 다녀오셨어요?',
-            isAi: true,
-          ),
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 13, 21),
-            text: '동네 공원에 잠깐 산책 다녀왔어.',
-            isAi: false,
-          ),
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 17, 2),
-            text: '오후에 드실 약은 챙겨 드셨어요?',
-            isAi: true,
-          ),
-          ConversationMessage(
-            time: DateTime(now.year, now.month, now.day, 17, 3),
-            text: '응. 방금 먹었어. 오늘 기분도 좋아.',
-            isAi: false,
-          ),
-        ],
-      ),
-    );
-
-    const moods = ['평온함', '좋음', '보통', '좋음', '조금 피곤함', '좋음'];
-    for (var i = 1; i <= 6; i++) {
-      final date = now.subtract(Duration(days: i));
-      _records.add(
-        DailyRecord(
-          date: date,
-          meal: true,
-          medicine: i != 3,
-          outing: i.isEven,
-          mood: moods[i - 1],
-          summary: i == 3
-              ? '식사는 정상적으로 하셨지만 저녁 복약 확인이 되지 않았습니다. 보호자의 확인이 필요합니다.'
-              : '식사를 정상적으로 하셨고 특별한 이상 징후 없이 평소와 비슷한 하루를 보내셨습니다.',
-          aiComment: i == 3 ? '복약 여부를 한 번 확인해주세요.' : '특별히 걱정되는 내용은 없어요.',
-          conversations: [
-            ConversationMessage(
-              time: DateTime(date.year, date.month, date.day, 10),
-              text: '오늘 아침 식사는 하셨어요?',
-              isAi: true,
-            ),
-            ConversationMessage(
-              time: DateTime(date.year, date.month, date.day, 10, 1),
-              text: '응. 아침 먹었어.',
-              isAi: false,
-            ),
-          ],
-        ),
-      );
+  @override
+  void dispose() {
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
     }
-  }
-
-  List<MedicationSchedule> _defaultMedications() => const [
-        MedicationSchedule(
-          id: 'medicine_1',
-          name: '혈압약',
-          hour: 17,
-          minute: 0,
-          days: [1, 2, 3, 4, 5, 6, 7],
-          enabled: true,
-        ),
-        MedicationSchedule(
-          id: 'medicine_2',
-          name: '비타민',
-          hour: 9,
-          minute: 0,
-          days: [1, 2, 3, 4, 5],
-          enabled: true,
-        ),
-      ];
-
-  List<AppNotificationItem> _defaultNotifications() {
-    final now = DateTime.now();
-    return [
-      AppNotificationItem(
-        id: 'notification_1',
-        title: '복약 확인 완료',
-        message: '오후 5시 혈압약 복용이 확인되었습니다.',
-        time: now.subtract(const Duration(minutes: 20)),
-        type: AppNotificationType.medicine,
-        read: false,
-      ),
-      AppNotificationItem(
-        id: 'notification_2',
-        title: '오늘의 요약이 도착했어요',
-        message: '오늘 하루의 식사, 복약, 외출 기록을 확인해보세요.',
-        time: now.subtract(const Duration(hours: 1)),
-        type: AppNotificationType.summary,
-        read: false,
-      ),
-      AppNotificationItem(
-        id: 'notification_3',
-        title: '효자손 연결 정상',
-        message: '기기가 정상적으로 연결되어 있습니다.',
-        time: now.subtract(const Duration(hours: 5)),
-        type: AppNotificationType.device,
-        read: true,
-      ),
-    ];
+    super.dispose();
   }
 }
 
-// Provider 같은 외부 상태관리 패키지 없이 AppState를 앱 전체에 공유합니다.
 class AppScope extends InheritedNotifier<AppState> {
-  const AppScope({
-    super.key,
-    required AppState notifier,
-    required super.child,
-  }) : super(notifier: notifier);
-
+  const AppScope({super.key, required AppState notifier, required super.child})
+      : super(notifier: notifier);
   static AppState of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope를 찾을 수 없습니다.');
