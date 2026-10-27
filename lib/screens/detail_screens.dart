@@ -19,7 +19,7 @@ class DailySummaryScreen extends StatelessWidget {
           children: [
             Text('하루 요약', style: AppTheme.displayStyle),
             const SizedBox(height: 6),
-            const Text('AI가 어르신의 오늘을 돌봄 정보 중심으로 정리했어요.', style: TextStyle(color: AppTheme.muted)),
+            const Text('기록된 실제 대화만 확인할 수 있습니다. 식사·복약·외출은 미확인 상태입니다.', style: TextStyle(color: AppTheme.muted)),
             const SizedBox(height: 24),
             GridView.count(
               crossAxisCount: 2,
@@ -29,16 +29,16 @@ class DailySummaryScreen extends StatelessWidget {
               mainAxisSpacing: 10,
               childAspectRatio: 1.75,
               children: [
-                _SummaryStatus(icon: Icons.restaurant_rounded, title: '식사', value: record.meal ? '완료' : '확인 필요'),
-                _SummaryStatus(icon: Icons.medication_rounded, title: '복약', value: record.medicine ? '완료' : '확인 필요'),
-                _SummaryStatus(icon: Icons.directions_walk_rounded, title: '외출', value: record.outing ? '있음' : '없음'),
+                _SummaryStatus(icon: Icons.restaurant_rounded, title: '식사', value: record.meal ? '완료' : '미확인'),
+                _SummaryStatus(icon: Icons.medication_rounded, title: '복약', value: record.medicine ? '완료' : '미확인'),
+                _SummaryStatus(icon: Icons.directions_walk_rounded, title: '외출', value: record.outing ? '있음' : '미확인'),
                 _SummaryStatus(icon: Icons.sentiment_satisfied_alt_rounded, title: '기분', value: record.mood),
               ],
             ),
             const SizedBox(height: 24),
             _TextCard(title: '오늘 하루', text: record.summary, background: AppTheme.blueSoft),
             const SizedBox(height: 14),
-            _TextCard(title: 'AI 한마디', text: record.aiComment, background: AppTheme.greenSoft),
+            _TextCard(title: '기록 안내', text: record.aiComment, background: AppTheme.greenSoft),
             const SizedBox(height: 26),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
