@@ -1,0 +1,4 @@
+functions-framework==3.*
+openai>=1.0,<3.0
+google-cloud-firestore>=2.0,<3.0
+firebase-admin>=6.5,<8.0
