@@ -233,7 +233,7 @@ class _MonthCalendar extends StatelessWidget {
             final date = DateTime(month.year, month.month, day);
             final selected = isSameDate(date, selectedDate);
             final hasRecord = records.any((record) => isSameDate(record.date, date));
-            final warning = false;
+
             return InkWell(
               borderRadius: BorderRadius.circular(99),
               onTap: () => onDateSelected(date),
