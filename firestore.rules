@@ -48,6 +48,16 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time;
         allow delete: if false;
       }
+      match /controls/ttsVoice {
+        allow read: if guardian(deviceId);
+        allow create, update: if guardian(deviceId)
+          && request.resource.data.keys().hasOnly(['voice', 'updatedAt', 'updatedBy'])
+          && request.resource.data.keys().hasAll(['voice', 'updatedAt', 'updatedBy'])
+          && request.resource.data.voice in ['alloy', 'nova', 'shimmer']
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if false;
+      }
       match /medications/{id} {
         allow read, create, update, delete: if guardian(deviceId);
       }
