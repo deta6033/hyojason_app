@@ -5,6 +5,7 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'detail_screens.dart';
+import '../widgets/ai_daily_summary_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -61,7 +62,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
             _SectionHeader(
               title: 'AI 하루 요약',
-              subtitle: '실제 대화 건수를 확인해요 (AI 요약 기능 미연동).',
+              subtitle: '실제 대화를 바탕으로 AI 요약을 생성할 수 있어요.',
               actionText: '자세히',
               onTap: () => Navigator.push(
                 context,
@@ -71,15 +72,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            _SummaryCard(
-              record: record,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DailySummaryScreen(record: record),
-                ),
-              ),
-            ),
+            const AiDailySummaryCard(),
             const SizedBox(height: 30),
             _SectionHeader(
               title: '최근 AI 대화',
