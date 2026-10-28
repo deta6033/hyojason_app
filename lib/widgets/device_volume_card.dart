@@ -67,7 +67,7 @@ class _DeviceVolumeCardState extends State<DeviceVolumeCard> {
               ),
               if (saving) const LinearProgressIndicator(),
               if (snapshot.hasError)
-                const Text('설정을 읽을 수 없습니다. Firestore 규칙을 확인하세요.',
+                Text('음량 설정 조회 실패: ${snapshot.error}',
                     style: TextStyle(color: AppTheme.danger)),
               const Text('현재는 서버에 목표 음량을 저장하는 기능입니다. '
                   'ESP32가 설정을 수신하고 적용했다는 확인은 아직 지원하지 않습니다. '
