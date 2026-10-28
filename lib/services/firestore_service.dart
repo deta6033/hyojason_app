@@ -21,6 +21,19 @@ class FirestoreService {
   Stream<QuerySnapshot<Map<String, dynamic>>> conversations() =>
       device.collection('conversations').orderBy('createdAt', descending: true).limit(150).snapshots();
   Stream<DocumentSnapshot<Map<String, dynamic>>> deviceStatus() => device.snapshots();
+  // 보호자가 지정한 목표 음량. 실제 ESP32 적용은 추후 펌웨어에서 구현.
+  Stream<DocumentSnapshot<Map<String, dynamic>>> volumeSettings() =>
+      device.collection('controls').doc('audio').snapshots();
+  Future<void> saveTargetVolume(int percent) async {
+    if (percent < 0 || percent > 100) {
+      throw ArgumentError.value(percent, 'percent', '0~100이어야 합니다.');
+    }
+    await device.collection('controls').doc('audio').set({
+      'volumePercent': percent,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    });
+  }
   Stream<QuerySnapshot<Map<String, dynamic>>> medications() =>
       device.collection('medications').snapshots();
   Stream<QuerySnapshot<Map<String, dynamic>>> notifications() =>
