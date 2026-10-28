@@ -68,7 +68,12 @@ class _GuardianGateState extends State<_GuardianGate> {
     super.didChangeDependencies();
     if (started) return;
     started = true;
-    AppScope.of(context).startLive();
+    // 첫 프레임 빌드 중 notifyListeners()가 호출되지 않도록 지연합니다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AppScope.of(context).startLive();
+      }
+    });
   }
   @override
   Widget build(BuildContext context) {
