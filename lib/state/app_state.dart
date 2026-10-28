@@ -26,6 +26,8 @@ class AppState extends ChangeNotifier {
     connected: false, battery: -1, networkName: '확인 불가',
     lastSync: DateTime.fromMillisecondsSinceEpoch(0),
     deviceId: FirestoreService.deviceId);
+  // 서버 이벤트가 멈추더라도 오프라인 전환 시간을 검사합니다.
+  Timer? _heartbeatRefreshTimer;
   bool _onboardingComplete = false;
   bool _liveReady = false;
   String? _error;
@@ -90,6 +92,15 @@ class AppState extends ChangeNotifier {
       return;
     }
 
+    _heartbeatRefreshTimer?.cancel();
+    _heartbeatRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_device.connected &&
+          DateTime.now().difference(_device.lastSync) >=
+              const Duration(seconds: 120)) {
+        _device = _device.copyWith(connected: false);
+        notifyListeners();
+      }
+    });
     _liveReady = true;
     _error = null;
     notifyListeners();
@@ -132,8 +143,10 @@ class AppState extends ChangeNotifier {
       final battery = info?['battery'];
       final lastSeen = _when(info?['lastSeenAt']);
       // 서버 heartbeat가 2분 이내인 경우에만 온라인으로 표시.
+      final heartbeatAge = DateTime.now().difference(lastSeen);
       final validHeartbeat = lastSeen.year >= 2020 &&
-          DateTime.now().difference(lastSeen).inSeconds.abs() < 120;
+          !heartbeatAge.isNegative &&
+          heartbeatAge < const Duration(seconds: 120);
       _device = DeviceStatus(
         connected: validHeartbeat && info?['online'] == true,
         battery: battery is num ? battery.toInt() : -1,
@@ -186,6 +199,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> stopLive() async {
+    _heartbeatRefreshTimer?.cancel();
+    _heartbeatRefreshTimer = null;
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -221,7 +236,11 @@ class AppState extends ChangeNotifier {
       remote.saveMedication(schedule);
   Future<void> updateMedication(MedicationSchedule schedule) =>
       remote.saveMedication(schedule);
-  Future<void> deleteMedication(String id) => remote.deleteMedication(id);
+  Future<void> deleteMedication(String id) async {
+    // 복약 일정 삭제 후 휴대폰에 남은 예약 알림도 취소합니다.
+    await remote.deleteMedication(id);
+    await NotificationService.instance.cancelMedication(id);
+  }
 
   Future<void> markNotificationRead(String id) => remote.markRead(id);
   Future<void> markAllNotificationsRead() => remote.markAllRead(
@@ -272,6 +291,7 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _heartbeatRefreshTimer?.cancel();
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }
