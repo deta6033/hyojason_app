@@ -60,7 +60,7 @@ class _DeviceVoiceCardState extends State<DeviceVoiceCard> {
               ]),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selected,
+                initialValue: selected,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: '효자손 응답 목소리'),
                 items: voices.entries.map((item) => DropdownMenuItem(
