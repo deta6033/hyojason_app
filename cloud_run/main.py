@@ -197,9 +197,21 @@ def generate_speech(text):
         max_retries=0
     )
 
+    # 보호자가 등록한 음색이 있을 때만 허용된 종류로 변경합니다.
+    voice = TTS_VOICE
+    try:
+        root = firestore.Client(project=FIRESTORE_PROJECT_ID).collection(
+            "devices").document(DEVICE_ID)
+        config = root.collection("controls").document("ttsVoice").get()
+        selected = (config.to_dict() or {}).get("voice") if config.exists else None
+        if selected in ("alloy", "nova", "shimmer"):
+            voice = selected
+    except Exception:
+        logging.exception("TTS voice preference read failed; using default")
+
     response = client.audio.speech.create(
         model=TTS_MODEL,
-        voice=TTS_VOICE,
+        voice=voice,
 
         input=text,
 
