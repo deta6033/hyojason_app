@@ -13,6 +13,18 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow write: if false;
       }
+      match /guardians/{uid}/pushTokens/{tokenId} {
+        allow read: if request.auth != null && request.auth.uid == uid && guardian(deviceId);
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && guardian(deviceId)
+          && request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt'])
+          && request.resource.data.keys().hasAll(['token', 'platform', 'updatedAt'])
+          && request.resource.data.token is string
+          && request.resource.data.token.size() <= 4096
+          && request.resource.data.platform == 'android'
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if request.auth != null && request.auth.uid == uid && guardian(deviceId);
+      }
       match /conversations/{id} {
         allow read: if guardian(deviceId);
         allow write: if false;
