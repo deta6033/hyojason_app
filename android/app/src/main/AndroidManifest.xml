@@ -4,8 +4,10 @@
     <!-- 기기 재부팅 뒤 예약 알림을 복원하기 위한 권한 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:label="효자손"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
