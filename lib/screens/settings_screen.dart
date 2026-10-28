@@ -6,6 +6,7 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'privacy_screen.dart';
+import 'wifi_setup_screen.dart';
 import '../widgets/device_volume_card.dart';
 import '../widgets/device_voice_card.dart';
 import '../services/push_service.dart';
@@ -61,6 +62,14 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 26),
             const _SectionTitle('효자손 기기'),
+            ListTile(
+              leading: const Icon(Icons.wifi_rounded),
+              title: const Text('네트워크 설정'),
+              subtitle: const Text('주변 Wi-Fi 검색 및 기기 연결'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const WifiSetupScreen())),
+            ),
             const SizedBox(height: 11),
             Container(
               padding: const EdgeInsets.all(18),

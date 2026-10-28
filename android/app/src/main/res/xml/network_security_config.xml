@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 기기 자체 AP의 로컬 주소만 HTTP 허용합니다. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain>192.168.4.1</domain>
+    </domain-config>
+</network-security-config>
