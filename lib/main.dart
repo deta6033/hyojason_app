@@ -6,6 +6,7 @@ import 'firebase_options.dart'; // flutterfire configure 생성
 import 'config/app_config.dart';
 import 'config/app_theme.dart';
 import 'screens/auth_screen.dart';
+import 'services/push_service.dart';
 import 'screens/main_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/local_storage_service.dart';
@@ -17,6 +18,8 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final state = AppState(storage: LocalStorageService());
   await state.initialize();
+  // Android에서만 FCM 토큰을 등록하고 갱신합니다.
+  await PushService.instance.initialize();
   runApp(AppScope(notifier: state, child: const HyojaSonApp()));
 }
 
