@@ -74,7 +74,7 @@ class DeviceMapScreen extends StatelessWidget {
                   child: SizedBox(
                     height: 350,
                     child: FlutterMap(
-                      key: ValueKey('${lat}_${lon}'),
+                      key: ValueKey('${lat}_$lon'),
                       options: MapOptions(initialCenter: position, initialZoom: 15),
                       children: [
                         TileLayer(
