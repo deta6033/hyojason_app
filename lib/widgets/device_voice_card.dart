@@ -72,7 +72,7 @@ class _DeviceVoiceCardState extends State<DeviceVoiceCard> {
               ),
               if (saving) const LinearProgressIndicator(),
               if (snapshot.hasError)
-                const Text('설정 데이터 조회 실패. Firebase 권한 규칙을 확인해 주세요.',
+                Text('목소리 설정 조회 실패: ${snapshot.error}',
                     style: TextStyle(color: AppTheme.danger)),
               const SizedBox(height: 10),
               const Text('OpenAI의 기본 제공 음색 중 선택합니다. '
