@@ -38,8 +38,16 @@ class _AiDailySummaryCardState extends State<AiDailySummaryCard> {
         body: jsonEncode({'date': today}),
       ).timeout(const Duration(seconds: 45));
       if (response.statusCode != 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
-        throw StateError('${data['message'] ?? '요약 생성 실패'} (HTTP ${response.statusCode})');
+        String reason = '서버 요청 실패';
+        try {
+          final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+          if (decoded is Map) {
+            reason = (decoded['error'] ?? decoded['message'] ?? reason).toString();
+          }
+        } on FormatException {
+          reason = '서버가 올바른 오류 응답을 보내지 않았습니다.';
+        }
+        throw StateError('$reason (HTTP ${response.statusCode})');
       }
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -77,6 +85,10 @@ class _AiDailySummaryCardState extends State<AiDailySummaryCard> {
                   ? '오늘 대화를 바탕으로 AI 요약을 생성할 수 있습니다. '
                       '대화가 없다면 생성되지 않습니다.'
                   : summary),
+              if (snapshot.connectionState == ConnectionState.waiting) ...[
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(),
+              ],
               if (snapshot.hasError) ...[
                 const SizedBox(height: 8),
                 const Text('요약 데이터를 확인할 수 없습니다.',
