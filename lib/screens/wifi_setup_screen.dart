@@ -52,30 +52,11 @@ class _WifiSetupScreenState extends State<WifiSetupScreen> {
   Future<void> connect(Map<String, dynamic> network) async {
     final ssid = (network['ssid'] ?? '').toString();
     final secured = network['secured'] == true;
-    final controller = TextEditingController();
+    // 팝업 내부 위젯이 제거되기 전 컨트롤러가 해제되는 오류를 방지합니다.
     final password = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('$ssid 연결'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(secured ? 'Wi-Fi 비밀번호를 입력하세요.' : '비밀번호가 없는 네트워크입니다.'),
-          if (secured) TextField(
-            controller: controller,
-            obscureText: true,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: '비밀번호'),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('취소')),
-          FilledButton(onPressed: () =>
-              Navigator.pop(dialogContext, secured ? controller.text : ''),
-              child: const Text('연결')),
-        ],
-      ),
+      builder: (_) => _WifiPasswordDialog(ssid: ssid, secured: secured),
     );
-    controller.dispose();
     if (password == null || !mounted) return;
     setState(() { loading = true; error = null; });
     try {
@@ -89,11 +70,16 @@ class _WifiSetupScreenState extends State<WifiSetupScreen> {
             ? 'Wi-Fi 연결 실패: 비밀번호 또는 신호를 확인하세요.'
             : '기기 연결 오류 (HTTP ${response.statusCode})');
       }
-      if (mounted) {
+      if (!mounted) return;
+      // 기기 AP가 연결 종료되는 순간 설정 화면을 정리하고 이전 화면으로 복귀.
+      // 프레임 완료 이후 탐색하여 빌드 중 위젯 트리 변경을 피합니다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$ssid 연결 성공! 기기가 설정을 저장했어요.')),
+          SnackBar(content: Text('$ssid Wi-Fi 연결 성공! 설정 화면으로 돌아왔어요.')),
         );
-      }
+      });
     } catch (e) {
       if (mounted) {
         setState(() => error = e.toString());
@@ -144,5 +130,48 @@ class _WifiSetupScreenState extends State<WifiSetupScreen> {
         '기기 설정망은 민감한 비밀번호를 전달하므로 공공장소에서 사용하지 말고 '
         '기기별 설정망 암호를 반드시 변경하세요.'),
     ]),
+  );
+}
+
+
+// 비밀번호 입력창 생명주기를 독립적으로 관리합니다.
+// Navigator.pop 애니메이션 중 TextEditingController가 먼저 해제되지 않도록 합니다.
+class _WifiPasswordDialog extends StatefulWidget {
+  const _WifiPasswordDialog({required this.ssid, required this.secured});
+  final String ssid;
+  final bool secured;
+
+  @override
+  State<_WifiPasswordDialog> createState() => _WifiPasswordDialogState();
+}
+
+class _WifiPasswordDialogState extends State<_WifiPasswordDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text('${widget.ssid} 연결'),
+    content: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(widget.secured ? 'Wi-Fi 비밀번호를 입력하세요.' : '비밀번호가 없는 네트워크입니다.'),
+      if (widget.secured) TextField(
+        controller: _controller,
+        obscureText: true,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: '비밀번호'),
+      ),
+    ]),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, widget.secured ? _controller.text : ''),
+        child: const Text('연결'),
+      ),
+    ],
   );
 }
