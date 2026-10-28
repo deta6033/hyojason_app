@@ -49,6 +49,9 @@ class FirestoreService {
       'updatedBy': uid,
     });
   }
+  // 생성된 AI 요약은 기기 서버가 쓰고 보호자는 읽기만 합니다.
+  Stream<DocumentSnapshot<Map<String, dynamic>>> dailySummary(String date) =>
+      device.collection('dailySummaries').doc(date).snapshots();
   Stream<QuerySnapshot<Map<String, dynamic>>> medications() =>
       device.collection('medications').snapshots();
   Stream<QuerySnapshot<Map<String, dynamic>>> notifications() =>
