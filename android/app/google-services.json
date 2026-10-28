@@ -1,0 +1,28 @@
+{
+  "project_info": {
+    "project_number": "230429142822",
+    "project_id": "hyojason-512909",
+    "storage_bucket": "hyojason-512909.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230429142822:android:43021778d4144005869be7",
+        "android_client_info": {
+          "package_name": "com.example.hyojason_app"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLbg-nc-DQrdqgALb9IrOtIQRRO4szKos"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
