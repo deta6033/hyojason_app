@@ -34,12 +34,18 @@ class _WifiSetupScreenState extends State<WifiSetupScreen> {
           .whereType<Map<String, dynamic>>().toList();
       items.sort((a, b) => ((b['rssi'] as num?) ?? -100)
           .compareTo((a['rssi'] as num?) ?? -100));
-      if (mounted) setState(() => networks = items);
+      if (mounted) {
+        setState(() => networks = items);
+      }
     } catch (_) {
-      if (mounted) setState(() => error =
-          '기기에 연결하지 못했어요. 휴대폰 Wi-Fi 설정에서 Hyojason-... 네트워크에 연결한 뒤 다시 검색해 주세요.');
+      if (mounted) {
+        setState(() => error =
+            '기기에 연결하지 못했어요. 휴대폰 Wi-Fi 설정에서 Hyojason-... 네트워크에 연결한 뒤 다시 검색해 주세요.');
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
@@ -89,9 +95,13 @@ class _WifiSetupScreenState extends State<WifiSetupScreen> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (mounted) {
+        setState(() => error = e.toString());
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
