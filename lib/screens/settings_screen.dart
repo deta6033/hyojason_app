@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import 'privacy_screen.dart';
 import '../widgets/device_volume_card.dart';
+import '../services/push_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -110,6 +111,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 18),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: () async {
+                await PushService.instance.unregister();
                 await state.stopLive();
                 await FirebaseAuth.instance.signOut();
               }, icon: const Icon(Icons.logout), label: const Text('로그아웃'))),
