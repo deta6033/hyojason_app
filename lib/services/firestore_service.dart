@@ -52,6 +52,18 @@ class FirestoreService {
   // 생성된 AI 요약은 기기 서버가 쓰고 보호자는 읽기만 합니다.
   Stream<DocumentSnapshot<Map<String, dynamic>>> dailySummary(String date) =>
       device.collection('dailySummaries').doc(date).snapshots();
+  Stream<DocumentSnapshot<Map<String, dynamic>>> voiceSettings() =>
+      device.collection('controls').doc('ttsVoice').snapshots();
+  Future<void> saveTTSVoice(String voice) async {
+    if (!const {'alloy', 'nova', 'shimmer'}.contains(voice)) {
+      throw ArgumentError.value(voice, 'voice', '허용되지 않은 음성입니다.');
+    }
+    await device.collection('controls').doc('ttsVoice').set({
+      'voice': voice,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    });
+  }
   Stream<QuerySnapshot<Map<String, dynamic>>> medications() =>
       device.collection('medications').snapshots();
   Stream<QuerySnapshot<Map<String, dynamic>>> notifications() =>
