@@ -6,6 +6,7 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'privacy_screen.dart';
+import '../widgets/device_volume_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -72,6 +73,8 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 14),
+            const DeviceVolumeCard(),
             const SizedBox(height: 26),
             const _SectionTitle('서비스'),
             const SizedBox(height: 11),
