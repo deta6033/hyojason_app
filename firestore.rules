@@ -25,6 +25,10 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time;
         allow delete: if request.auth != null && request.auth.uid == uid && guardian(deviceId);
       }
+      match /dailySummaries/{date} {
+        allow read: if guardian(deviceId);
+        allow write: if false;
+      }
       match /conversations/{id} {
         allow read: if guardian(deviceId);
         allow write: if false;
