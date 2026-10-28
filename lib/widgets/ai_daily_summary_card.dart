@@ -91,7 +91,7 @@ class _AiDailySummaryCardState extends State<AiDailySummaryCard> {
               ],
               if (snapshot.hasError) ...[
                 const SizedBox(height: 8),
-                const Text('요약 데이터를 확인할 수 없습니다.',
+                Text('요약 데이터 조회 실패: ${snapshot.error}',
                     style: TextStyle(color: AppTheme.danger)),
               ],
               if (error != null) ...[
