@@ -38,8 +38,8 @@ class PushService {
     });
 
     // TODO: 현재 Firebase Messaging API의 register/onRegistered 방식으로 이행.
-    // ignore: deprecated_member_use
     _refreshSubscription ??=
+        // ignore: deprecated_member_use
         FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
       try {
         if (FirebaseAuth.instance.currentUser != null &&
