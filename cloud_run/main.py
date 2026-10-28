@@ -9,7 +9,9 @@ import functions_framework
 from flask import jsonify, Response
 from openai import OpenAI, OpenAIError
 import firebase_admin
-from firebase_admin import messaging
+from firebase_admin import messaging, auth as firebase_auth
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 # =====================================================
@@ -266,6 +268,100 @@ def _valid_number(value, minimum, maximum):
     return value if minimum <= value <= maximum else None
 
 
+def _guardian_from_token(request):
+    """Firebase ID 토큰을 확인해 등록된 보호자만 허용합니다."""
+    bearer = request.headers.get("Authorization", "")
+    if not bearer.startswith("Bearer "):
+        return None
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app()
+    try:
+        decoded = firebase_auth.verify_id_token(bearer[7:])
+        uid = decoded["uid"]
+        root = firestore.Client(project=FIRESTORE_PROJECT_ID).collection(
+            "devices").document(DEVICE_ID)
+        guardian = root.collection("guardians").document(uid).get()
+        return root if guardian.exists and (guardian.to_dict() or {}).get("enabled") is True else None
+    except Exception:
+        logging.exception("Guardian authentication failed")
+        return None
+
+
+def handle_daily_summary(request):
+    """실제 대화만 근거로 오늘의 AI 하루 요약을 생성합니다."""
+    device = _guardian_from_token(request)
+    if device is None:
+        return error_response("보호자 인증이 필요합니다.", 401)
+    today = datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+    body = request.get_json(silent=True) if request.is_json else None
+    if not isinstance(body, dict) or body.get("date") != today:
+        return error_response("오늘 날짜의 요약만 생성할 수 있습니다.", 400)
+    try:
+        # 가장 최근 데이터만 사용. AI가 없는 내용을 추정하지 않도록 지시합니다.
+        docs = device.collection("conversations").order_by(
+            "createdAt", direction=firestore.Query.DESCENDING
+        ).limit(100).stream()
+        lines = []
+        for snapshot in docs:
+            data = snapshot.to_dict() or {}
+            when = data.get("createdAt")
+            if when is None or when.astimezone(ZoneInfo("Asia/Seoul")).date().isoformat() != today:
+                continue
+            question = str(data.get("question") or "").strip()
+            answer = str(data.get("reply") or "").strip()
+            if question:
+                lines.append(f"어르신: {question[:500]}")
+            if answer:
+                lines.append(f"AI: {answer[:500]}")
+            if len(lines) >= 60:
+                break
+        if not lines:
+            return error_response("오늘 기록된 대화가 없습니다.", 404)
+        if not os.environ.get("OPENAI_API_KEY"):
+            return error_response("AI 서버 설정 오류", 503)
+        response = OpenAI(
+            api_key=os.environ["OPENAI_API_KEY"],
+            timeout=25.0, max_retries=0,
+        ).responses.create(
+            model=AI_MODEL,
+            store=False,
+            instructions=(
+                "너는 어르신의 대화 내용을 보호자에게 요약한다. "
+                "제공된 대화에 실제로 언급된 정보만 두세 문장으로 요약하라. "
+                "식사·복약·외출 사실은 명시적으로 확인된 경우만 언급하라. "
+                "감정 상태나 건강 문제를 진단하거나 추정하지 마라. "
+                "민감한 개인정보를 불필요하게 반복하지 마라. "
+                "한국어로 간결하게 작성하라."
+            ),
+            input="\\n".join(lines),
+            max_output_tokens=260,
+        )
+        summary = response.output_text.strip()
+        if not summary:
+            return error_response("요약 생성 결과가 비어 있습니다.", 502)
+        device.collection("dailySummaries").document(today).set({
+            "summary": summary,
+            "date": today,
+            "conversationCount": len(lines),
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+            "source": "openai-conversation-summary",
+        })
+        return jsonify({"status": "success", "summary": summary, "date": today}), 200
+    except Exception:
+        logging.exception("Daily summary generation failed")
+        return error_response("AI 하루 요약 생성에 실패했습니다.", 500)
+
+
+def handle_device_config(request):
+    """인증된 ESP32에 목표 음량 설정만 반환합니다."""
+    root = firestore.Client(project=FIRESTORE_PROJECT_ID).collection("devices").document(DEVICE_ID)
+    settings = root.collection("controls").document("audio").get()
+    value = (settings.to_dict() or {}).get("volumePercent") if settings.exists else 25
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
+        value = 25
+    return jsonify({"status": "success", "volumePercent": value}), 200
+
+
 def send_emergency_push(device):
     """권한 있는 보호자 기기에게 긴급 푸시를 개별 전송합니다."""
     if not firebase_admin._apps:
@@ -404,6 +500,15 @@ def hello_http(request):
     # ---------------------------------------------
     if request.method == "GET":
 
+        if request.path == "/device/config":
+            if not check_device_auth(request):
+                return error_response("인증되지 않은 기기입니다.", 401)
+            try:
+                return handle_device_config(request)
+            except Exception:
+                logging.exception("Device config read failed")
+                return error_response("설정을 읽지 못했습니다.", 500)
+
         if request.path != "/":
             return error_response(
                 "존재하지 않는 경로입니다.", 404
@@ -414,6 +519,10 @@ def hello_http(request):
             "device": "Hyojason",
             "message": "효자손 서버 정상 작동"
         }), 200
+
+    # 보호자 전용 AI 하루 요약은 Firebase ID 토큰으로 별도 인증합니다.
+    if request.method == "POST" and request.path == "/summary":
+        return handle_daily_summary(request)
 
     # POST 외의 메서드는 허용하지 않음
     if request.method != "POST":
