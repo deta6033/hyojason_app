@@ -29,6 +29,7 @@ class PushService {
         if (!authorized) return;
         final messaging = FirebaseMessaging.instance;
         await messaging.requestPermission(alert: true, badge: true, sound: true);
+        // ignore: deprecated_member_use
         final token = await messaging.getToken();
         if (token != null) await _register(token);
       } catch (e) {
@@ -36,6 +37,8 @@ class PushService {
       }
     });
 
+    // TODO: 현재 Firebase Messaging API의 register/onRegistered 방식으로 이행.
+    // ignore: deprecated_member_use
     _refreshSubscription ??=
         FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
       try {
