@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/models.dart';
@@ -13,6 +15,19 @@ class FirestoreService {
     if (user == null) throw StateError('보호자 로그인이 필요합니다.');
     return user.uid;
   }
+  // 토큰은 사용자별 하위 컬렉션에 보관하고 원본을 문서 ID에 쓰지 않습니다.
+  String _tokenId(String token) => sha256.convert(utf8.encode(token)).toString();
+  Future<void> savePushToken(String token) =>
+      device.collection('guardians').doc(uid).collection('pushTokens')
+          .doc(_tokenId(token)).set({
+            'token': token,
+            'platform': 'android',
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+  Future<void> deletePushToken(String token) =>
+      device.collection('guardians').doc(uid).collection('pushTokens')
+          .doc(_tokenId(token)).delete();
+
   Future<bool> isAuthorized() async {
     if (auth.currentUser == null) return false;
     final document = await device.collection('guardians').doc(uid).get();
