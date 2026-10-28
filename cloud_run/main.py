@@ -333,7 +333,7 @@ def handle_daily_summary(request):
                 "민감한 개인정보를 불필요하게 반복하지 마라. "
                 "한국어로 간결하게 작성하라."
             ),
-            input="\\n".join(lines),
+            input="\n".join(lines),
             max_output_tokens=260,
         )
         summary = response.output_text.strip()
