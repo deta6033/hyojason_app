@@ -6,7 +6,8 @@ import wave
 
 from google.cloud import firestore
 import functions_framework
-from flask import jsonify, Response
+from flask import jsonify, Response, make_response
+from urllib.parse import urlsplit
 from openai import OpenAI, OpenAIError
 import firebase_admin
 from firebase_admin import messaging, auth as firebase_auth
@@ -500,8 +501,55 @@ def handle_device_report(request):
 # =====================================================
 # 4. Cloud Run HTTP 진입점
 # =====================================================
+def _allowed_summary_origin(origin):
+    """허용된 웹 출처만 CORS에 반영합니다. 인증은 별도로 검증합니다."""
+    if not origin:
+        return False
+    try:
+        parsed = urlsplit(origin)
+        local_dev = (
+            parsed.scheme == "http"
+            and parsed.hostname in ("localhost", "127.0.0.1")
+            and parsed.port is not None
+            and parsed.username is None
+            and parsed.password is None
+        )
+        deployed = origin in {
+            item.strip() for item in
+            os.environ.get("HYOJASON_CORS_ORIGINS", "").split(",")
+            if item.strip()
+        }
+        return local_dev or deployed
+    except ValueError:
+        return False
+
+
 @functions_framework.http
 def hello_http(request):
+    # /summary만 브라우저의 CORS preflight를 처리합니다.
+    # 다른 기기 API의 인증/라우팅에는 영향을 주지 않습니다.
+    if request.path != "/summary":
+        return _hello_http_impl(request)
+
+    origin = request.headers.get("Origin", "")
+    allowed = _allowed_summary_origin(origin)
+    if request.method == "OPTIONS":
+        if not allowed:
+            return error_response("허용되지 않은 웹 출처입니다.", 403)
+        response = make_response("", 204)
+    else:
+        response = make_response(_hello_http_impl(request))
+
+    if allowed:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        response.headers["Access-Control-Max-Age"] = "600"
+    return response
+
+
+def _hello_http_impl(request):
     """
     Cloud Run에서 HTTP 요청을 처리하는 함수.
     기존 함수 진입점 이름을 유지한다.
