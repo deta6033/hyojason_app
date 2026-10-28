@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import 'home_screen.dart';
+import 'device_map_screen.dart';
 import 'medication_screen.dart';
 import 'notifications_screen.dart';
 import 'records_screen.dart';
 import 'settings_screen.dart';
 
-// 앱 하단의 5개 메인 탭을 관리합니다.
+// 앱 하단의 6개 메인 탭을 관리합니다.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -23,6 +24,7 @@ class _MainShellState extends State<MainShell> {
     RecordsScreen(),
     MedicationScreen(),
     NotificationsScreen(),
+    DeviceMapScreen(),
     SettingsScreen(),
   ];
 
@@ -63,6 +65,11 @@ class _MainShellState extends State<MainShell> {
             ),
             selectedIcon: const Icon(Icons.notifications_rounded),
             label: '알림',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map_rounded),
+            label: '지도',
           ),
           const NavigationDestination(
             icon: Icon(Icons.settings_outlined),
