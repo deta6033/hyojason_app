@@ -15,7 +15,17 @@ import 'state/app_state.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 각 Android/Web 앱 ID와 API 옵션은 FlutterFire CLI가 자동 생성한다.
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Android에서 네이티브 Firebase가 이미 등록된 경우 중복 초기화를 방지합니다.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+    // Firebase 기본 앱이 이미 존재하는 상태라면 기존 인스턴스를 사용합니다.
+    Firebase.app();
+    debugPrint('[Firebase] 기본 앱이 이미 초기화되어 기존 앱을 사용합니다.');
+  }
   final state = AppState(storage: LocalStorageService());
   await state.initialize();
   // Android에서만 FCM 토큰을 등록하고 갱신합니다.
