@@ -36,6 +36,17 @@ class NotificationService {
     );
 
     await _plugin.initialize(settings: settings);
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(const AndroidNotificationChannel(
+            'hyojason_emergency',
+            '효자손 긴급 알림',
+            description: '어르신의 기기 긴급호출 알림입니다.',
+            importance: Importance.max,
+            playSound: true,
+          ));
+    }
     _initialized = true;
   }
 
