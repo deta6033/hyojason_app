@@ -90,7 +90,7 @@ class DeviceMapScreen extends StatelessWidget {
                                 size: 50, color: AppTheme.primary),
                           ),
                         ]),
-                        const RichAttributionWidget(attributions: [
+                        RichAttributionWidget(attributions: [
                           TextSourceAttribution('OpenStreetMap contributors'),
                         ]),
                       ],
