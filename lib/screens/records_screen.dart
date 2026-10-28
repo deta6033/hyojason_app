@@ -62,7 +62,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final record = records[index];
-        final needsAttention = false;
         return InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => Navigator.push(
@@ -78,12 +77,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: needsAttention ? AppTheme.orangeSoft : AppTheme.blueSoft,
+                    color: AppTheme.blueSoft,
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
-                    needsAttention ? Icons.warning_amber_rounded : Icons.calendar_today_rounded,
-                    color: needsAttention ? AppTheme.warning : AppTheme.primary,
+                    Icons.calendar_today_rounded,
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -234,7 +233,7 @@ class _MonthCalendar extends StatelessWidget {
             final date = DateTime(month.year, month.month, day);
             final selected = isSameDate(date, selectedDate);
             final hasRecord = records.any((record) => isSameDate(record.date, date));
-            final warning = false;
+
             return InkWell(
               borderRadius: BorderRadius.circular(99),
               onTap: () => onDateSelected(date),
@@ -257,7 +256,7 @@ class _MonthCalendar extends StatelessWidget {
                         width: 5,
                         height: 5,
                         decoration: BoxDecoration(
-                          color: selected ? Colors.white : (warning ? AppTheme.warning : AppTheme.success),
+                          color: selected ? Colors.white : AppTheme.success,
                           shape: BoxShape.circle,
                         ),
                       ),

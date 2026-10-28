@@ -5,6 +5,7 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'detail_screens.dart';
+import '../widgets/ai_daily_summary_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -61,7 +62,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
             _SectionHeader(
               title: 'AI 하루 요약',
-              subtitle: '실제 대화 건수를 확인해요 (AI 요약 기능 미연동).',
+              subtitle: '실제 대화를 바탕으로 AI 요약을 생성할 수 있어요.',
               actionText: '자세히',
               onTap: () => Navigator.push(
                 context,
@@ -71,15 +72,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            _SummaryCard(
-              record: record,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DailySummaryScreen(record: record),
-                ),
-              ),
-            ),
+            const AiDailySummaryCard(),
             const SizedBox(height: 30),
             _SectionHeader(
               title: '최근 AI 대화',
@@ -426,82 +419,6 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  final DailyRecord record;
-  final VoidCallback onTap;
-
-  const _SummaryCard({required this.record, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: Ink(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.greenSoft,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFDCEFE3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 18,
-                  color: AppTheme.success,
-                ),
-                SizedBox(width: 7),
-                Text(
-                  'AI가 정리한 오늘',
-                  style: TextStyle(
-                    color: AppTheme.success,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              record.summary,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF4F5D55),
-                    height: 1.65,
-                  ),
-            ),
-            const SizedBox(height: 14),
-            const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '자세히 보기',
-                  style: TextStyle(
-                    color: AppTheme.primaryDark,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-                SizedBox(width: 3),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 15,
-                  color: AppTheme.primaryDark,
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

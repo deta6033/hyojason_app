@@ -13,9 +13,50 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow write: if false;
       }
+      match /guardians/{uid}/pushTokens/{tokenId} {
+        allow read: if request.auth != null && request.auth.uid == uid && guardian(deviceId);
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && guardian(deviceId)
+          && request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt'])
+          && request.resource.data.keys().hasAll(['token', 'platform', 'updatedAt'])
+          && request.resource.data.token is string
+          && request.resource.data.token.size() <= 4096
+          && request.resource.data.platform == 'android'
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if request.auth != null && request.auth.uid == uid && guardian(deviceId);
+      }
+      match /dailySummaries/{date} {
+        allow read: if guardian(deviceId);
+        allow write: if false;
+      }
       match /conversations/{id} {
         allow read: if guardian(deviceId);
         allow write: if false;
+      }
+      // 보호자만 음량 목표값(0~100)을 설정할 수 있음.
+      // 실제 앰프 출력 상한은 ESP32 펌웨어에서 별도로 강제해야 함.
+      match /controls/{id} {
+        allow read: if guardian(deviceId) && id == 'audio';
+        allow create, update: if guardian(deviceId)
+          && id == 'audio'
+          && request.resource.data.keys().hasOnly(['volumePercent', 'updatedAt', 'updatedBy'])
+          && request.resource.data.keys().hasAll(['volumePercent', 'updatedAt', 'updatedBy'])
+          && request.resource.data.volumePercent is int
+          && request.resource.data.volumePercent >= 0
+          && request.resource.data.volumePercent <= 100
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if false;
+      }
+      match /controls/ttsVoice {
+        allow read: if guardian(deviceId);
+        allow create, update: if guardian(deviceId)
+          && request.resource.data.keys().hasOnly(['voice', 'updatedAt', 'updatedBy'])
+          && request.resource.data.keys().hasAll(['voice', 'updatedAt', 'updatedBy'])
+          && request.resource.data.voice in ['alloy', 'nova', 'shimmer']
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if false;
       }
       match /medications/{id} {
         allow read, create, update, delete: if guardian(deviceId);

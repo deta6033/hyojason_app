@@ -68,8 +68,10 @@ class AppState extends ChangeNotifier {
   DateTime _when(dynamic value) {
     if (value is Timestamp) return value.toDate().toLocal();
     if (value is DateTime) return value.toLocal();
-    if (value is String) return DateTime.tryParse(value)?.toLocal() ??
-        DateTime.fromMillisecondsSinceEpoch(0);
+    if (value is String) {
+      return DateTime.tryParse(value)?.toLocal() ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+    }
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
